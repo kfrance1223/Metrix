@@ -11,13 +11,16 @@ import DetailedMetricCard from "@/components/metrics/DetailedMetricCard";
 import OverallScoreDisplay from "@/components/metrics/OverallScoreDisplay";
 import InsightsPanel from "@/components/metrics/InsightsPanel";
 import RecommendationsPanel from "@/components/metrics/RecommendationsPanel";
-import type { MetricWithScore, DashboardInsight, ProgressionRecommendation } from "@/types";
+import PersonalizedRecommendationsPanel from "@/components/metrics/PersonalizedRecommendationsPanel";
+import type { MetricWithScore, DashboardInsight, ProgressionRecommendation, TargetRecommendationWithContext } from "@/types";
 
 interface DashboardClientProps {
   initialMetrics: MetricWithScore[];
   overallScore: number;
   insights: DashboardInsight[];
   recommendations: ProgressionRecommendation[];
+  personalizedRecommendations: TargetRecommendationWithContext[];
+  hasProfile: boolean;
 }
 
 const CHART_VARIANTS: ("area" | "bar")[] = ["area", "area", "bar"];
@@ -27,6 +30,8 @@ export default function DashboardClient({
   overallScore,
   insights,
   recommendations,
+  personalizedRecommendations,
+  hasProfile,
 }: DashboardClientProps) {
   const metrics = initialMetrics;
 
@@ -99,7 +104,15 @@ export default function DashboardClient({
         </>
       )}
 
-      {/* Recommendations Panel */}
+      {/* Personalized Recommendations Panel */}
+      {metrics.length > 0 && (
+        <PersonalizedRecommendationsPanel
+          recommendations={personalizedRecommendations}
+          hasProfile={hasProfile}
+        />
+      )}
+
+      {/* Progression-based Recommendations Panel */}
       {metrics.length > 0 && (
         <RecommendationsPanel recommendations={recommendations} />
       )}

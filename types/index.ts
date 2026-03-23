@@ -82,6 +82,77 @@ export interface ProgressionRecommendation {
   evidence: string;        // e.g., "Exceeded target 4 of last 4 weeks"
 }
 
+// ============ User Profile & Recommendations ============
+
+export type ActivityLevel = 'sedentary' | 'lightly_active' | 'moderately_active' | 'very_active' | 'extra_active';
+export type FitnessGoal = 'lose_fat' | 'maintain' | 'build_muscle';
+export type EmploymentType = 'full_time' | 'part_time' | 'freelance' | 'self_employed' | 'unemployed';
+export type RecommendationStatus = 'pending' | 'accepted' | 'dismissed' | 'expired';
+export type RecommendationConfidence = 'high' | 'medium' | 'low';
+
+/** User profile for personalized target recommendations. */
+export interface UserProfile {
+  id: string;
+  user_id: string;
+  // Fitness context
+  date_of_birth: string | null;
+  sex: 'male' | 'female' | 'other' | null;
+  height_cm: number | null;
+  weight_kg: number | null;
+  body_fat_percentage: number | null;
+  activity_level: ActivityLevel | null;
+  fitness_goal: FitnessGoal | null;
+  special_conditions: string[];
+  hide_calorie_recs: boolean;
+  // Finance context
+  monthly_income: number | null;
+  monthly_expenses: number | null;
+  total_debt: number | null;
+  has_employer_match: boolean;
+  employer_match_percent: number | null;
+  employment_type: EmploymentType | null;
+  // Preferences
+  unit_system: 'metric' | 'imperial';
+  currency: string;
+  created_at: string;
+  updated_at: string;
+}
+
+/** A persisted target recommendation with accept/dismiss workflow. */
+export interface TargetRecommendation {
+  id: string;
+  user_id: string;
+  submetric_id: string | null;
+  recommended_target: number;
+  reasoning: string;
+  formula_id: string;
+  confidence: RecommendationConfidence;
+  status: RecommendationStatus;
+  created_at: string;
+  updated_at: string;
+}
+
+/** Computed recommendation (before persistence). */
+export interface ComputedRecommendation {
+  submetric_id: string | null;
+  submetric_name: string;
+  metric_name: string;
+  metric_color: string;
+  recommended_target: number;
+  current_target: number | null;
+  reasoning: string;
+  formula_id: string;
+  confidence: RecommendationConfidence;
+}
+
+/** A recommendation with display context for the UI. */
+export interface TargetRecommendationWithContext extends TargetRecommendation {
+  submetric_name: string;
+  metric_name: string;
+  metric_color: string;
+  current_target: number | null;
+}
+
 // ============ Computed Types (assembled in Server Components) ============
 
 /** A submetric with computed score and current-period data. */

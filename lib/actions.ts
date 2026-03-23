@@ -17,11 +17,18 @@ import type {
   Metric,
   Submetric,
   SubmetricEntry,
+  UserProfile,
+  TargetRecommendation,
+  TargetRecommendationWithContext,
   UnitType,
   TrackingPeriod,
   AggregationType,
+  ActivityLevel,
+  FitnessGoal,
+  EmploymentType,
 } from '@/types';
 import type { MetricTemplate } from '@/lib/onboarding-templates';
+import { generateAllRecommendations } from '@/lib/recommendations';
 
 // ============ Metric Actions ============
 
@@ -314,4 +321,323 @@ export async function createMetricsFromTemplates(
 
   revalidatePath('/');
   revalidatePath('/metrics');
+}
+
+// ============ Profile Actions ============
+
+export async function getUserProfile(): Promise<UserProfile | null> {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
+
+  const { data: profile } = await supabase
+    .from('user_profiles')
+    .select('*')
+    .eq('user_id', user.id)
+    .single();
+
+  return profile ?? null;
+}
+
+export async function upsertUserProfile(data: {
+  date_of_birth?: string | null;
+  sex?: 'male' | 'female' | 'other' | null;
+  height_cm?: number | null;
+  weight_kg?: number | null;
+  body_fat_percentage?: number | null;
+  activity_level?: ActivityLevel | null;
+  fitness_goal?: FitnessGoal | null;
+  special_conditions?: string[];
+  hide_calorie_recs?: boolean;
+  monthly_income?: number | null;
+  monthly_expenses?: number | null;
+  total_debt?: number | null;
+  has_employer_match?: boolean;
+  employer_match_percent?: number | null;
+  employment_type?: EmploymentType | null;
+  unit_system?: 'metric' | 'imperial';
+  currency?: string;
+}): Promise<UserProfile> {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
+
+  // Check if profile already exists
+  const { data: existing } = await supabase
+    .from('user_profiles')
+    .select('id')
+    .eq('user_id', user.id)
+    .single();
+
+  let profile: UserProfile;
+
+  if (existing) {
+    const { data: updated, error } = await supabase
+      .from('user_profiles')
+      .update({ ...data, updated_at: new Date().toISOString() })
+      .eq('user_id', user.id)
+      .select()
+      .single();
+
+    if (error) throw new Error(`Failed to update profile: ${error.message}`);
+    profile = updated;
+  } else {
+    const { data: created, error } = await supabase
+      .from('user_profiles')
+      .insert({ ...data, user_id: user.id })
+      .select()
+      .single();
+
+    if (error) throw new Error(`Failed to create profile: ${error.message}`);
+    profile = created;
+  }
+
+  // Expire all pending recommendations when profile changes
+  await supabase
+    .from('target_recommendations')
+    .update({ status: 'expired', updated_at: new Date().toISOString() })
+    .eq('user_id', user.id)
+    .eq('status', 'pending');
+
+  revalidatePath('/');
+  revalidatePath('/profile');
+  return profile;
+}
+
+// ============ Recommendation Actions ============
+
+export async function generateAndStoreRecommendations(): Promise<TargetRecommendation[]> {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
+
+  // Fetch profile
+  const { data: profile } = await supabase
+    .from('user_profiles')
+    .select('*')
+    .eq('user_id', user.id)
+    .single();
+
+  if (!profile) return [];
+
+  // Fetch metrics with submetrics
+  const { data: metrics } = await supabase
+    .from('metrics')
+    .select('*, submetrics(*)')
+    .order('sort_order');
+
+  if (!metrics || metrics.length === 0) return [];
+
+  // Generate recommendations using the pure engine
+  const computed = generateAllRecommendations(profile, metrics);
+
+  if (computed.length === 0) return [];
+
+  // Expire old pending recs
+  await supabase
+    .from('target_recommendations')
+    .update({ status: 'expired', updated_at: new Date().toISOString() })
+    .eq('user_id', user.id)
+    .eq('status', 'pending');
+
+  // Get previously dismissed formula_ids to avoid re-suggesting
+  const { data: dismissed } = await supabase
+    .from('target_recommendations')
+    .select('formula_id, submetric_id')
+    .eq('user_id', user.id)
+    .eq('status', 'dismissed');
+
+  const dismissedKeys = new Set(
+    (dismissed ?? []).map((d) => `${d.formula_id}:${d.submetric_id}`)
+  );
+
+  // Filter out dismissed formulas
+  const newRecs = computed.filter(
+    (r) => !dismissedKeys.has(`${r.formula_id}:${r.submetric_id}`)
+  );
+
+  if (newRecs.length === 0) return [];
+
+  // Insert new recommendations
+  const rows = newRecs.map((r) => ({
+    user_id: user.id,
+    submetric_id: r.submetric_id,
+    recommended_target: r.recommended_target,
+    reasoning: r.reasoning,
+    formula_id: r.formula_id,
+    confidence: r.confidence,
+    status: 'pending' as const,
+  }));
+
+  const { data: inserted, error } = await supabase
+    .from('target_recommendations')
+    .insert(rows)
+    .select();
+
+  if (error) throw new Error(`Failed to store recommendations: ${error.message}`);
+
+  revalidatePath('/');
+  return inserted ?? [];
+}
+
+export async function getPersonalizedRecommendations(): Promise<TargetRecommendationWithContext[]> {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
+
+  // Fetch pending recommendations
+  const { data: recs } = await supabase
+    .from('target_recommendations')
+    .select('*')
+    .eq('user_id', user.id)
+    .eq('status', 'pending')
+    .order('created_at', { ascending: false });
+
+  if (!recs || recs.length === 0) return [];
+
+  // Fetch submetrics with their parent metric for context
+  const submetricIds = recs
+    .map((r) => r.submetric_id)
+    .filter((id): id is string => id !== null);
+
+  if (submetricIds.length === 0) return [];
+
+  const { data: submetrics } = await supabase
+    .from('submetrics')
+    .select('id, name, target_value, metrics!inner(name, color)')
+    .in('id', submetricIds);
+
+  const subMap = new Map<string, { name: string; target_value: number; metric_name: string; metric_color: string }>();
+  for (const sub of submetrics ?? []) {
+    const metric = sub.metrics as any;
+    subMap.set(sub.id, {
+      name: sub.name,
+      target_value: sub.target_value,
+      metric_name: metric.name,
+      metric_color: metric.color,
+    });
+  }
+
+  return recs
+    .filter((r) => r.submetric_id && subMap.has(r.submetric_id))
+    .map((r) => {
+      const ctx = subMap.get(r.submetric_id!)!;
+      return {
+        ...r,
+        submetric_name: ctx.name,
+        metric_name: ctx.metric_name,
+        metric_color: ctx.metric_color,
+        current_target: ctx.target_value,
+      };
+    });
+}
+
+export async function acceptRecommendation(id: string): Promise<void> {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
+
+  // Fetch the recommendation
+  const { data: rec, error: fetchError } = await supabase
+    .from('target_recommendations')
+    .select('*')
+    .eq('id', id)
+    .eq('user_id', user.id)
+    .single();
+
+  if (fetchError || !rec) throw new Error('Recommendation not found');
+
+  // Update the submetric's target_value
+  if (rec.submetric_id) {
+    const { error: updateError } = await supabase
+      .from('submetrics')
+      .update({ target_value: rec.recommended_target, updated_at: new Date().toISOString() })
+      .eq('id', rec.submetric_id);
+
+    if (updateError) throw new Error(`Failed to update submetric target: ${updateError.message}`);
+  }
+
+  // Mark recommendation as accepted
+  const { error: statusError } = await supabase
+    .from('target_recommendations')
+    .update({ status: 'accepted', updated_at: new Date().toISOString() })
+    .eq('id', id);
+
+  if (statusError) throw new Error(`Failed to accept recommendation: ${statusError.message}`);
+
+  revalidatePath('/');
+  revalidatePath('/metrics');
+  revalidatePath('/profile');
+}
+
+export async function dismissRecommendation(id: string): Promise<void> {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
+
+  const { error } = await supabase
+    .from('target_recommendations')
+    .update({ status: 'dismissed', updated_at: new Date().toISOString() })
+    .eq('id', id)
+    .eq('user_id', user.id);
+
+  if (error) throw new Error(`Failed to dismiss recommendation: ${error.message}`);
+
+  revalidatePath('/');
+}
+
+export async function acceptAllRecommendations(): Promise<void> {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
+
+  const { data: recs } = await supabase
+    .from('target_recommendations')
+    .select('*')
+    .eq('user_id', user.id)
+    .eq('status', 'pending');
+
+  if (!recs || recs.length === 0) return;
+
+  // Update each submetric's target
+  for (const rec of recs) {
+    if (rec.submetric_id) {
+      await supabase
+        .from('submetrics')
+        .update({ target_value: rec.recommended_target, updated_at: new Date().toISOString() })
+        .eq('id', rec.submetric_id);
+    }
+  }
+
+  // Mark all as accepted
+  await supabase
+    .from('target_recommendations')
+    .update({ status: 'accepted', updated_at: new Date().toISOString() })
+    .eq('user_id', user.id)
+    .eq('status', 'pending');
+
+  revalidatePath('/');
+  revalidatePath('/metrics');
+  revalidatePath('/profile');
 }

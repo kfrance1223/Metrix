@@ -27,6 +27,7 @@ import {
   generateProgressionRecommendations,
 } from "@/lib/insights";
 import DashboardClient from "@/components/metrics/DashboardClient";
+import { getPersonalizedRecommendations, getUserProfile } from "@/lib/actions";
 import type { MetricWithScore } from "@/types";
 
 export default async function DashboardPage() {
@@ -123,12 +124,20 @@ export default async function DashboardPage() {
   const insights = generateDashboardInsights(metricsWithScores);
   const recommendations = generateProgressionRecommendations(metricsWithScores);
 
+  // Fetch personalized recommendations and profile status
+  const [personalizedRecs, profile] = await Promise.all([
+    getPersonalizedRecommendations().catch(() => []),
+    getUserProfile().catch(() => null),
+  ]);
+
   return (
     <DashboardClient
       initialMetrics={metricsWithScores}
       overallScore={overallScore}
       insights={insights}
       recommendations={recommendations}
+      personalizedRecommendations={personalizedRecs}
+      hasProfile={!!profile}
     />
   );
 }

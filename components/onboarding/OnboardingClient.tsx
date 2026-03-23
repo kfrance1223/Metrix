@@ -1,7 +1,9 @@
 /**
  * components/onboarding/OnboardingClient.tsx
  *
- * Single-step onboarding: select/deselect template categories, then create them.
+ * Two-step onboarding:
+ *   Step 1: Select/deselect template categories
+ *   Step 2: Optional profile setup for personalized targets
  */
 "use client";
 
@@ -9,6 +11,11 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { ONBOARDING_TEMPLATES } from "@/lib/onboarding-templates";
 import { createMetricsFromTemplates } from "@/lib/actions";
+import ProfileFormClient from "@/components/profile/ProfileFormClient";
+import {
+  FITNESS_CATEGORY_ALIASES,
+  FINANCE_CATEGORY_ALIASES,
+} from "@/lib/recommendations/constants";
 
 export default function OnboardingClient() {
   const router = useRouter();
@@ -17,6 +24,7 @@ export default function OnboardingClient() {
     new Set(ONBOARDING_TEMPLATES.map((_, i) => i))
   );
   const [error, setError] = useState<string | null>(null);
+  const [step, setStep] = useState<"templates" | "profile">("templates");
 
   const toggle = (index: number) => {
     setSelected((prev) => {
@@ -26,6 +34,16 @@ export default function OnboardingClient() {
       return next;
     });
   };
+
+  // Determine which profile sections to show based on selected templates
+  const selectedTemplates = ONBOARDING_TEMPLATES.filter((_, i) => selected.has(i));
+  const selectedNames = selectedTemplates.map((t) => t.name.toLowerCase());
+  const hasFitnessSelected = selectedNames.some((name) =>
+    FITNESS_CATEGORY_ALIASES.some((alias) => name.includes(alias))
+  );
+  const hasFinanceSelected = selectedNames.some((name) =>
+    FINANCE_CATEGORY_ALIASES.some((alias) => name.includes(alias))
+  );
 
   const handleSubmit = () => {
     setError(null);
@@ -37,8 +55,8 @@ export default function OnboardingClient() {
     startTransition(async () => {
       try {
         await createMetricsFromTemplates(templates);
-        router.push("/");
-        router.refresh();
+        // Move to profile step
+        setStep("profile");
       } catch (err) {
         setError(err instanceof Error ? err.message : "Something went wrong");
       }
@@ -55,9 +73,52 @@ export default function OnboardingClient() {
     });
   };
 
+  const handleProfileComplete = () => {
+    router.push("/");
+    router.refresh();
+  };
+
+  // Step 2: Profile setup
+  if (step === "profile") {
+    return (
+      <div className="min-h-[60vh] flex flex-col items-center justify-center max-w-2xl mx-auto">
+        <div className="text-center mb-6">
+          <div className="flex items-center justify-center gap-2 mb-3">
+            <span className="text-xs text-muted-foreground bg-foreground/5 px-2.5 py-0.5 rounded-full">
+              Step 2 of 2 — Optional
+            </span>
+          </div>
+          <h1 className="text-2xl font-bold tracking-tight mb-2">
+            <span className="text-accent">Tell us about yourself</span>
+          </h1>
+          <p className="text-muted-foreground text-sm">
+            This helps us set personalized targets instead of generic defaults.
+            You can always update this later in your profile.
+          </p>
+        </div>
+
+        <div className="w-full">
+          <ProfileFormClient
+            initialProfile={null}
+            hasFitnessMetrics={hasFitnessSelected}
+            hasFinanceMetrics={hasFinanceSelected}
+            compact
+            onComplete={handleProfileComplete}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  // Step 1: Template selection
   return (
     <div className="min-h-[60vh] flex flex-col items-center justify-center max-w-2xl mx-auto">
       <div className="text-center mb-8">
+        <div className="flex items-center justify-center gap-2 mb-3">
+          <span className="text-xs text-muted-foreground bg-foreground/5 px-2.5 py-0.5 rounded-full">
+            Step 1 of 2
+          </span>
+        </div>
         <h1 className="text-3xl font-bold tracking-tight mb-2">
           <span className="text-accent">Welcome to </span>
           <span className="text-accent">Metri</span>
@@ -112,7 +173,7 @@ export default function OnboardingClient() {
           className="px-8 py-2.5 rounded-xl text-sm font-semibold cursor-pointer
             bg-linear-to-r from-accent to-accent-light hover:brightness-110
             text-black transition-all duration-200 shadow-lg shadow-accent/20 disabled:opacity-50">
-          {isPending ? "Setting up..." : "Get Started"}
+          {isPending ? "Setting up..." : "Next"}
         </button>
       </div>
     </div>
