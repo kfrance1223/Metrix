@@ -552,33 +552,13 @@ export async function acceptRecommendation(id: string): Promise<void> {
   } = await supabase.auth.getUser();
   if (!user) throw new Error('Not authenticated');
 
-  // Fetch the recommendation
-  const { data: rec, error: fetchError } = await supabase
-    .from('target_recommendations')
-    .select('*')
-    .eq('id', id)
-    .eq('user_id', user.id)
-    .single();
+  // Atomically update submetric target and mark recommendation as accepted
+  const { error } = await supabase.rpc('accept_recommendation', {
+    p_recommendation_id: id,
+    p_user_id: user.id,
+  });
 
-  if (fetchError || !rec) throw new Error('Recommendation not found');
-
-  // Update the submetric's target_value
-  if (rec.submetric_id) {
-    const { error: updateError } = await supabase
-      .from('submetrics')
-      .update({ target_value: rec.recommended_target, updated_at: new Date().toISOString() })
-      .eq('id', rec.submetric_id);
-
-    if (updateError) throw new Error(`Failed to update submetric target: ${updateError.message}`);
-  }
-
-  // Mark recommendation as accepted
-  const { error: statusError } = await supabase
-    .from('target_recommendations')
-    .update({ status: 'accepted', updated_at: new Date().toISOString() })
-    .eq('id', id);
-
-  if (statusError) throw new Error(`Failed to accept recommendation: ${statusError.message}`);
+  if (error) throw new Error(`Failed to accept recommendation: ${error.message}`);
 
   revalidatePath('/');
   revalidatePath('/metrics');

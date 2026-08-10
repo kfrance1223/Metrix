@@ -53,6 +53,11 @@ CREATE POLICY "user owns submetrics" ON public.submetrics
     metric_id IN (
       SELECT id FROM public.metrics WHERE user_id = auth.uid()
     )
+  )
+  WITH CHECK (
+    metric_id IN (
+      SELECT id FROM public.metrics WHERE user_id = auth.uid()
+    )
   );
 
 -- RLS policies for entries: users can only see their own entries
