@@ -9,7 +9,8 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { upsertUserProfile, generateAndStoreRecommendations } from "@/lib/actions";
-import type { UserProfile } from "@/types";
+import type { UserProfile, ActivityLevel, FitnessGoal } from "@/types";
+
 
 interface ProfileFormClientProps {
   initialProfile: UserProfile | null;
@@ -55,8 +56,9 @@ export default function ProfileFormClient({
   const handleSubmit = () => {
     setError(null);
     setSuccess(false);
-
-    startTransition(async () => {
+  
+    startTransition(async () => { 
+      
       try {
         await upsertUserProfile({
           date_of_birth: dateOfBirth || null,
@@ -72,15 +74,15 @@ export default function ProfileFormClient({
           total_debt: totalDebt ? parseFloat(totalDebt) : null,
           has_employer_match: hasEmployerMatch,
           employer_match_percent: employerMatchPercent ? parseFloat(employerMatchPercent) : null,
-          employment_type: (employmentType as any) || null,
-          unit_system: unitSystem as 'metric' | 'imperial',
+          employment_type: (employmentType as string) || null,
+          unit_system: unitSystem as 'metric' | 'imperial', 
           currency,
         });
 
         // Generate new recommendations based on updated profile
         await generateAndStoreRecommendations();
 
-        if (onComplete) {
+        if (onComplete) { 
           onComplete();
         } else {
           setSuccess(true);
@@ -181,7 +183,7 @@ export default function ProfileFormClient({
               </div>
               <div>
                 <label className={labelClass}>Activity Level</label>
-                <select value={activityLevel} onChange={(e) => setActivityLevel(e.target.value)} className={selectClass}>
+                <select value={activityLevel} onChange={(e) => setActivityLevel(e.target.value)} className={selectClass}> / cast as ActivityLevelType 
                   <option value="">Select...</option>
                   <option value="sedentary">Sedentary (little/no exercise)</option>
                   <option value="lightly_active">Lightly Active (1-3 days/week)</option>

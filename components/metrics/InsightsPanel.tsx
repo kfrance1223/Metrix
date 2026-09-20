@@ -65,15 +65,20 @@ export default function InsightsPanel({ insights }: InsightsPanelProps) {
   if (insights.length === 0) return null;
 
   return (
-    <div className="card-gradient rounded-2xl p-6 mb-8">
-      <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-4">
-        Insights
-      </h2>
-      <div className="flex flex-col gap-3">
+    <div className="glass p-7">
+      <div className="flex items-baseline justify-between mb-5">
+        <h2 className="font-display text-2xl font-semibold text-foreground">
+          Insights
+        </h2>
+        <span className="text-[10px] uppercase tracking-[0.28em] text-muted-foreground">
+          {insights.length} signals
+        </span>
+      </div>
+      <div className="flex flex-col gap-3.5">
         {insights.map((insight, i) => (
           <div key={i} className="flex items-start gap-3">
             <InsightIcon icon={insight.icon} />
-            <span className="text-sm text-foreground/85 leading-snug">
+            <span className="text-sm text-foreground/90 leading-relaxed">
               {insight.message}
             </span>
           </div>

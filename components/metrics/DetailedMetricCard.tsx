@@ -11,6 +11,7 @@ import {
   AreaChart, Area, BarChart, Bar, XAxis, YAxis,
   CartesianGrid, ResponsiveContainer, Tooltip,
 } from "recharts";
+import { ToggleButton, ToggleButtonGroup } from "@heroui/react";
 import ProgressBar from "./ProgressBar";
 import StreakBadge from "./StreakBadge";
 import type { MetricWithScore, SubmetricEntry } from "@/types";
@@ -94,24 +95,30 @@ export default function DetailedMetricCard({
   const tooltipText = "var(--foreground)";
 
   return (
-    <div className="card-gradient rounded-2xl p-5">
+    <div className="glass p-5">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-bold uppercase tracking-wide" style={{ color: metric.color }}>
+        <h3 className="font-display text-xl font-semibold" style={{ color: metric.color }}>
           {metric.name}
         </h3>
-        <div className="flex gap-1">
-          {RANGE_OPTIONS.map(({ label, days }) => (
-            <button key={label} onClick={() => setRangeDays(days)}
-              className={`px-2.5 py-1 rounded text-[10px] font-semibold uppercase cursor-pointer transition-all duration-200
-                ${rangeDays === days
-                  ? "bg-accent/15 text-accent border border-accent/30"
-                  : "text-muted-foreground hover:text-foreground border border-transparent"
-                }`}>
+        <ToggleButtonGroup
+          size="sm"
+          selectionMode="single"
+          disallowEmptySelection
+          selectedKeys={[String(rangeDays)]}
+          onSelectionChange={(keys) => {
+            const next = Array.from(keys as Set<string | number>)[0];
+            if (next !== undefined) setRangeDays(Number(next));
+          }}
+          aria-label="Chart range"
+        >
+          {RANGE_OPTIONS.map(({ label, days }, i) => (
+            <ToggleButton key={days} id={String(days)}>
+              {i > 0 && <ToggleButtonGroup.Separator />}
               {label}
-            </button>
+            </ToggleButton>
           ))}
-        </div>
+        </ToggleButtonGroup>
       </div>
 
       {/* Chart */}

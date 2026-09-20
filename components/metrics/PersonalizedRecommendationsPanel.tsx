@@ -34,7 +34,7 @@ export default function PersonalizedRecommendationsPanel({
   // Prompt to create profile if none exists
   if (!hasProfile) {
     return (
-      <div className="mt-8 card-gradient rounded-xl p-5 border border-accent/20">
+      <div className="mt-8 glass p-5">
         <div className="flex items-center gap-3 mb-2">
           <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="text-accent">
@@ -127,11 +127,11 @@ export default function PersonalizedRecommendationsPanel({
   };
 
   return (
-    <div className="mt-8">
-      <div className="flex items-center justify-between mb-4">
+    <section className="mt-2">
+      <div className="flex items-end justify-between mb-4">
         <button
           onClick={() => setExpanded(!expanded)}
-          className="flex items-center gap-2 cursor-pointer group"
+          className="flex items-center gap-3 cursor-pointer group text-left"
         >
           <svg
             width="12"
@@ -142,15 +142,20 @@ export default function PersonalizedRecommendationsPanel({
           >
             <path d="M4 2l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
-          <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-wider group-hover:text-foreground/70 transition-colors">
-            Personalized Recommendations
-          </h2>
-          <span className="text-xs text-accent bg-accent/10 px-2 py-0.5 rounded-full">
-            Based on your profile
-          </span>
-          <span className="text-xs text-muted-foreground bg-foreground/5 px-2 py-0.5 rounded-full">
-            {recs.length}
-          </span>
+          <div>
+            <h2 className="font-display text-2xl font-semibold text-foreground group-hover:text-foreground/85 transition-colors flex items-center gap-2">
+              Personalized recommendations
+              <span className="text-[11px] font-medium text-accent bg-accent/10 px-2 py-0.5 rounded-full">
+                From your profile
+              </span>
+              <span className="text-[11px] font-medium text-muted-foreground bg-foreground/5 px-2 py-0.5 rounded-full">
+                {recs.length}
+              </span>
+            </h2>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              Evidence-based target suggestions from your profile.
+            </p>
+          </div>
         </button>
 
         {expanded && recs.length > 1 && (
@@ -175,7 +180,7 @@ export default function PersonalizedRecommendationsPanel({
               return (
                 <div
                   key={rec.id}
-                  className={`card-gradient rounded-xl p-4 relative overflow-hidden border border-accent/10 ${isProcessing ? "opacity-60" : ""}`}
+                  className={`glass-subtle p-4 relative overflow-hidden ${isProcessing ? "opacity-60" : ""}`}
                 >
                   {/* Color accent bar */}
                   <div
@@ -247,6 +252,6 @@ export default function PersonalizedRecommendationsPanel({
           </div>
         </>
       )}
-    </div>
+    </section>
   );
 }

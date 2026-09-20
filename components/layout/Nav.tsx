@@ -1,8 +1,8 @@
 /**
  * components/layout/Nav.tsx
  *
- * Horizontal top navigation bar with tab links.
- * Theme-aware with accent highlight on active tab.
+ * Floating glass-pill navigation. Sits above the ambient aurora
+ * with a warm border and an amber glow on the active tab.
  */
 "use client";
 
@@ -13,7 +13,6 @@ const NAV_LINKS = [
   { href: "/", label: "Dashboard" },
   { href: "/metrics", label: "Metrics" },
   { href: "/profile", label: "Profile" },
-  { href: "/simulate", label: "Simulate" },
   { href: "/settings", label: "Settings" },
 ];
 
@@ -21,8 +20,8 @@ export default function Nav() {
   const pathname = usePathname();
 
   return (
-    <nav className="w-full border-b border-card-border/50">
-      <div className="max-w-7xl mx-auto flex items-center justify-center gap-2 px-6 py-3">
+    <div className="sticky top-4 z-30 w-full flex justify-center px-6 pt-4">
+      <nav className="glass-nav flex items-center gap-1 px-2 py-1.5">
         {NAV_LINKS.map(({ href, label }) => {
           const isActive =
             href === "/" ? pathname === "/" : pathname.startsWith(href);
@@ -31,19 +30,26 @@ export default function Nav() {
               key={href}
               href={href}
               className={`
-                px-6 py-2 rounded-lg text-sm font-medium cursor-pointer transition-all duration-200
+                relative px-5 py-1.5 rounded-full text-[13px] font-medium cursor-pointer
+                transition-all duration-300
                 ${
                   isActive
-                    ? "text-foreground bg-card border border-accent/30"
-                    : "text-muted-foreground hover:text-foreground hover:bg-foreground/5 border border-transparent"
+                    ? "text-foreground"
+                    : "text-muted-foreground hover:text-foreground/85"
                 }
               `}
             >
-              {label}
+              {isActive && (
+                <span
+                  aria-hidden
+                  className="absolute inset-0 rounded-full bg-linear-to-b from-accent/25 to-accent/5 border border-accent/30 shadow-[0_0_16px_-2px_var(--accent)]"
+                />
+              )}
+              <span className="relative">{label}</span>
             </Link>
           );
         })}
-      </div>
-    </nav>
+      </nav>
+    </div>
   );
 }

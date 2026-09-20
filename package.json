@@ -9,6 +9,9 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@heroui-pro/react": "^1.0.0-beta.10",
+    "@heroui/react": "^3.2.6",
+    "@heroui/styles": "^3.2.6",
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.107.0",
     "class-variance-authority": "^0.7.1",

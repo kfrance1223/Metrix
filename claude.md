@@ -111,7 +111,6 @@ Each action authenticates via cookie, mutates via Supabase, then calls `revalida
 | `/metrics/:id`   | Metric detail          | Required |
 | `/profile`       | User profile + recs    | Required |
 | `/onboarding`    | New user setup         | Required |
-| `/simulate`      | Placeholder            | Required |
 | `/settings`      | Theme + account        | Required |
 | `/login`         | Magic-link login       | Public |
 | `/auth/callback` | Supabase code exchange | Public |
@@ -150,7 +149,6 @@ Custom primitives in `components/ui/` (Button, Input, Modal) — not full shadcn
 
 ## Placeholders / Incomplete
 
-- `/simulate` page is a placeholder stub
 - No tests yet
 - No generated Supabase types (`supabase gen types` not wired up — using manual types)
 - Submetric RLS policy only has USING (no WITH CHECK for insert/update/delete)

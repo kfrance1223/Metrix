@@ -1,8 +1,8 @@
 /**
  * components/metrics/OverallScoreDisplay.tsx
  *
- * Large semicircular gauge for the overall "life score" on the dashboard.
- * Uses the green accent palette gradient arc.
+ * Hero score display — a large semicircular gauge behind an
+ * over-sized serif percentage. Sits inside the shrine glass panel.
  */
 
 "use client";
@@ -16,10 +16,10 @@ export default function OverallScoreDisplay({
 }: OverallScoreDisplayProps) {
   const percentage = Math.round(score * 100);
 
-  const cx = 150;
-  const cy = 130;
-  const radius = 100;
-  const strokeWidth = 12;
+  const cx = 170;
+  const cy = 150;
+  const radius = 120;
+  const strokeWidth = 14;
 
   const startX = cx - radius;
   const startY = cy;
@@ -36,12 +36,15 @@ export default function OverallScoreDisplay({
 
   return (
     <div className="flex flex-col items-center">
-      <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-6">
-        Overall Progress Score
-      </h2>
+      <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-[0.28em] mb-2">
+        Overall Progress
+      </span>
+      <p className="text-sm text-muted-foreground/80 mb-8 font-display italic">
+        A weighted read on the shape of your life.
+      </p>
 
-      <div className="relative" style={{ width: 300, height: 160 }}>
-        <svg viewBox="0 0 300 160" className="w-full h-full">
+      <div className="relative" style={{ width: 340, height: 180 }}>
+        <svg viewBox="0 0 340 180" className="w-full h-full">
           <defs>
             <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="0%">
               <stop offset="0%" stopColor="var(--accent)" />
@@ -51,29 +54,45 @@ export default function OverallScoreDisplay({
           </defs>
 
           {/* Track */}
-          <path d={arcPath} fill="none" stroke="var(--gauge-track)" strokeWidth={strokeWidth} strokeLinecap="round" />
+          <path
+            d={arcPath}
+            fill="none"
+            stroke="var(--gauge-track)"
+            strokeWidth={strokeWidth}
+            strokeLinecap="round"
+            opacity="0.5"
+          />
 
           {/* Fill */}
-          <path d={arcPath} fill="none" stroke={`url(#${gradientId})`}
-            strokeWidth={strokeWidth} strokeLinecap="round"
-            strokeDasharray={halfCircumference} strokeDashoffset={dashOffset}
-            style={{ transition: "stroke-dashoffset 1.2s ease-in-out" }} />
+          <path
+            d={arcPath}
+            fill="none"
+            stroke={`url(#${gradientId})`}
+            strokeWidth={strokeWidth}
+            strokeLinecap="round"
+            strokeDasharray={halfCircumference}
+            strokeDashoffset={dashOffset}
+            style={{ transition: "stroke-dashoffset 1.4s cubic-bezier(0.16, 1, 0.3, 1)" }}
+          />
 
           {/* Tick marks */}
-          <line x1={startX} y1={cy + 8} x2={startX} y2={cy + 16} stroke="var(--card-border)" strokeWidth="2" />
-          <line x1={cx} y1={cy - radius - 8} x2={cx} y2={cy - radius - 16} stroke="var(--card-border)" strokeWidth="2" />
-          <line x1={endX} y1={cy + 8} x2={endX} y2={cy + 16} stroke="var(--card-border)" strokeWidth="2" />
+          <line x1={startX} y1={cy + 10} x2={startX} y2={cy + 20} stroke="var(--card-border)" strokeWidth="1.5" opacity="0.6" />
+          <line x1={cx} y1={cy - radius - 10} x2={cx} y2={cy - radius - 20} stroke="var(--card-border)" strokeWidth="1.5" opacity="0.6" />
+          <line x1={endX} y1={cy + 10} x2={endX} y2={cy + 20} stroke="var(--card-border)" strokeWidth="1.5" opacity="0.6" />
         </svg>
 
-        {/* Score text */}
-        <div className="absolute inset-0 flex flex-col items-center justify-end pb-4">
-          <div className="flex items-baseline gap-1">
-            <span className="text-5xl font-bold text-foreground text-glow">
-              {percentage}%
+        {/* Score numeral */}
+        <div className="absolute inset-0 flex flex-col items-center justify-end pb-2">
+          <div className="flex items-start">
+            <span
+              className="font-display text-7xl font-semibold text-foreground leading-none text-glow"
+              style={{ fontVariationSettings: '"opsz" 144' }}
+            >
+              {percentage}
             </span>
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" className="text-accent ml-1">
-              <path d="M10 15V5M10 5l4 4M10 5L6 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
+            <span className="font-display text-3xl text-accent leading-none mt-1 ml-1">
+              %
+            </span>
           </div>
         </div>
       </div>
