@@ -9,7 +9,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { upsertUserProfile, generateAndStoreRecommendations } from "@/lib/actions";
-import type { UserProfile, ActivityLevel, FitnessGoal } from "@/types";
+import type { UserProfile, ActivityLevel, FitnessGoal, EmploymentType } from "@/types";
 
 
 interface ProfileFormClientProps {
@@ -39,8 +39,8 @@ export default function ProfileFormClient({
   const [heightCm, setHeightCm] = useState(initialProfile?.height_cm?.toString() ?? "");
   const [weightKg, setWeightKg] = useState(initialProfile?.weight_kg?.toString() ?? "");
   const [bodyFat, setBodyFat] = useState(initialProfile?.body_fat_percentage?.toString() ?? "");
-  const [activityLevel, setActivityLevel] = useState(initialProfile?.activity_level ?? "");
-  const [fitnessGoal, setFitnessGoal] = useState(initialProfile?.fitness_goal ?? "");
+  const [activityLevel, setActivityLevel] = useState<ActivityLevel | "">(initialProfile?.activity_level ?? "");
+  const [fitnessGoal, setFitnessGoal] = useState<FitnessGoal | "">(initialProfile?.fitness_goal ?? "");
   const [hideCalorieRecs, setHideCalorieRecs] = useState(initialProfile?.hide_calorie_recs ?? false);
 
   const [monthlyIncome, setMonthlyIncome] = useState(initialProfile?.monthly_income?.toString() ?? "");
@@ -48,7 +48,7 @@ export default function ProfileFormClient({
   const [totalDebt, setTotalDebt] = useState(initialProfile?.total_debt?.toString() ?? "");
   const [hasEmployerMatch, setHasEmployerMatch] = useState(initialProfile?.has_employer_match ?? false);
   const [employerMatchPercent, setEmployerMatchPercent] = useState(initialProfile?.employer_match_percent?.toString() ?? "");
-  const [employmentType, setEmploymentType] = useState(initialProfile?.employment_type ?? "");
+  const [employmentType, setEmploymentType] = useState<EmploymentType | "">(initialProfile?.employment_type ?? "");
 
   const [unitSystem, setUnitSystem] = useState(initialProfile?.unit_system ?? "metric");
   const [currency, setCurrency] = useState(initialProfile?.currency ?? "USD");
@@ -66,15 +66,15 @@ export default function ProfileFormClient({
           height_cm: heightCm ? parseFloat(heightCm) : null,
           weight_kg: weightKg ? parseFloat(weightKg) : null,
           body_fat_percentage: bodyFat ? parseFloat(bodyFat) : null,
-          activity_level: (activityLevel as any) || null,
-          fitness_goal: (fitnessGoal as any) || null,
+          activity_level: activityLevel || null,
+          fitness_goal: fitnessGoal || null,
           hide_calorie_recs: hideCalorieRecs,
           monthly_income: monthlyIncome ? parseFloat(monthlyIncome) : null,
           monthly_expenses: monthlyExpenses ? parseFloat(monthlyExpenses) : null,
           total_debt: totalDebt ? parseFloat(totalDebt) : null,
           has_employer_match: hasEmployerMatch,
           employer_match_percent: employerMatchPercent ? parseFloat(employerMatchPercent) : null,
-          employment_type: (employmentType as string) || null,
+          employment_type: employmentType || null,
           unit_system: unitSystem as 'metric' | 'imperial', 
           currency,
         });
@@ -183,7 +183,7 @@ export default function ProfileFormClient({
               </div>
               <div>
                 <label className={labelClass}>Activity Level</label>
-                <select value={activityLevel} onChange={(e) => setActivityLevel(e.target.value)} className={selectClass}> / cast as ActivityLevelType 
+                <select value={activityLevel} onChange={(e) => setActivityLevel(e.target.value as ActivityLevel | "")} className={selectClass}>
                   <option value="">Select...</option>
                   <option value="sedentary">Sedentary (little/no exercise)</option>
                   <option value="lightly_active">Lightly Active (1-3 days/week)</option>
@@ -194,7 +194,7 @@ export default function ProfileFormClient({
               </div>
               <div>
                 <label className={labelClass}>Fitness Goal</label>
-                <select value={fitnessGoal} onChange={(e) => setFitnessGoal(e.target.value)} className={selectClass}>
+                <select value={fitnessGoal} onChange={(e) => setFitnessGoal(e.target.value as FitnessGoal | "")} className={selectClass}>
                   <option value="">Select...</option>
                   <option value="lose_fat">Lose Fat</option>
                   <option value="maintain">Maintain</option>
@@ -263,7 +263,7 @@ export default function ProfileFormClient({
               </div>
               <div>
                 <label className={labelClass}>Employment Type</label>
-                <select value={employmentType} onChange={(e) => setEmploymentType(e.target.value)} className={selectClass}>
+                <select value={employmentType} onChange={(e) => setEmploymentType(e.target.value as EmploymentType | "")} className={selectClass}>
                   <option value="">Select...</option>
                   <option value="full_time">Full Time</option>
                   <option value="part_time">Part Time</option>
