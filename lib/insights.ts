@@ -14,6 +14,7 @@ import type {
   SubmetricStreak,
   DashboardInsight,
   ProgressionRecommendation,
+  ActivityFeedItem,
 } from "@/types";
 
 // ── Period boundaries ────────────────────────────────────────────────
@@ -189,6 +190,87 @@ export function computePreviousPeriodScore(
 
   const aggregated = aggregateEntries(periodEntries, submetric.aggregation_type);
   return normalizeValue(aggregated, submetric.target_value, submetric.unit_type);
+}
+
+// ── Overview stats ───────────────────────────────────────────────────
+
+/**
+ * Submetrics whose current-period target is met, over total submetrics.
+ */
+export function countTodayHits(
+  metrics: MetricWithScore[]
+): { hit: number; total: number } {
+  const subs = metrics.flatMap((m) => m.submetrics);
+  return { hit: subs.filter((s) => s.score >= 1).length, total: subs.length };
+}
+
+/**
+ * Consecutive days on which every daily-tracking submetric hit its target.
+ * Weekly/monthly submetrics are ignored. Today counts only once it is
+ * already fully hit; otherwise the count starts from yesterday.
+ * Bounded by the entry window passed in (30 days on the dashboard).
+ */
+export function computeDailyStreak(
+  metrics: MetricWithScore[],
+  referenceDate?: Date
+): number {
+  const dailySubs = metrics
+    .flatMap((m) => m.submetrics)
+    .filter((s) => s.tracking_period === "daily");
+  if (dailySubs.length === 0) return 0;
+
+  function metOn(sub: SubmetricWithScore, dayStart: Date): boolean {
+    const dayEnd = new Date(dayStart);
+    dayEnd.setDate(dayEnd.getDate() + 1);
+    const dayEntries = sub.entries.filter((e) => {
+      const d = new Date(e.recorded_at);
+      return d >= dayStart && d < dayEnd;
+    });
+    if (dayEntries.length === 0) return false;
+    const aggregated = aggregateEntries(dayEntries, sub.aggregation_type);
+    return normalizeValue(aggregated, sub.target_value, sub.unit_type) >= 1.0;
+  }
+
+  const cursor = referenceDate ? new Date(referenceDate) : new Date();
+  cursor.setHours(0, 0, 0, 0);
+
+  let streak = 0;
+  if (dailySubs.every((s) => metOn(s, cursor))) streak = 1;
+  cursor.setDate(cursor.getDate() - 1);
+
+  for (let safety = 0; safety < 365; safety++) {
+    if (!dailySubs.every((s) => metOn(s, cursor))) break;
+    streak++;
+    cursor.setDate(cursor.getDate() - 1);
+  }
+
+  return streak;
+}
+
+/**
+ * Entries across all submetrics, newest first.
+ */
+export function getRecentActivityFeed(
+  metrics: MetricWithScore[],
+  limit = 8
+): ActivityFeedItem[] {
+  const items: ActivityFeedItem[] = metrics.flatMap((m) =>
+    m.submetrics.flatMap((s) =>
+      s.entries.map((e) => ({
+        entryId: e.id,
+        submetricName: s.name,
+        metricColor: m.color,
+        value: e.value,
+        unitType: s.unit_type,
+        unitLabel: s.unit_label,
+        recordedAt: e.recorded_at,
+      }))
+    )
+  );
+  items.sort(
+    (a, b) => new Date(b.recordedAt).getTime() - new Date(a.recordedAt).getTime()
+  );
+  return items.slice(0, limit);
 }
 
 // ── Dashboard Insights ───────────────────────────────────────────────

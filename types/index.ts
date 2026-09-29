@@ -168,3 +168,24 @@ export interface MetricWithScore extends Metric {
   submetrics: SubmetricWithScore[];
   score: number; // 0.0 to 1.0, weighted average of submetric scores
 }
+
+// ============ Dashboard Overview ============
+
+/** Aggregated numbers shown in the dashboard overview row. */
+export interface OverviewStats {
+  overallScore: number; // 0.0 to 1.0
+  hitRatio: { hit: number; total: number }; // submetrics on target / total
+  metricCount: number;
+  dailyStreak: number; // consecutive days every daily submetric hit target
+}
+
+/** A single row in the dashboard "Recent Activity" feed. */
+export interface ActivityFeedItem {
+  entryId: string;
+  submetricName: string;
+  metricColor: string;
+  value: number;
+  unitType: UnitType;
+  unitLabel: string | null;
+  recordedAt: string; // ISO 8601
+}

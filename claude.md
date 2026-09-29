@@ -54,6 +54,9 @@ Pure functions operating on 30-day entry window:
 - `computeSubmetricStreak()` — consecutive periods target was met
 - `generateDashboardInsights()` — top 5 insights (strength, decline, streak, attention, perfect)
 - `generateProgressionRecommendations()` — suggest raising/lowering targets based on recent performance
+- `countTodayHits()` — submetrics currently on target / total (dashboard overview)
+- `computeDailyStreak()` — consecutive days every daily submetric hit target (bounded by the 30-day window)
+- `getRecentActivityFeed()` — newest entries across all submetrics
 
 ### Personalized Recommendations (`lib/recommendations/`)
 
@@ -77,7 +80,9 @@ Recommendations are scoped to Fitness and Finance categories. Matching uses a ke
 - `app/(dashboard)/profile/page.tsx` — User profile for personalized recommendations
 
 **Client Components** (`"use client"`):
-- `components/metrics/DashboardClient.tsx` — Dashboard interactivity
+- `components/metrics/DashboardClient.tsx` — Dashboard shell: header → overview stats → metric grid → activity/reflection, insights + recs below the fold
+- `components/dashboard/*` — Dashboard blocks (`DashboardHeader`, `OverviewStats`, `YourMetricsGrid`, `RecentActivity`, `LatestReflection` placeholder)
+- `components/layout/Sidebar.tsx` — Persistent left nav with user email + logout
 - `components/metrics/MetricsPageClient.tsx` — Accordion CRUD for metrics/submetrics
 - `components/metrics/MetricChart.tsx` — Recharts line chart (7d/30d/90d)
 - `components/metrics/EntryForm.tsx` — Log entries
@@ -115,7 +120,7 @@ Each action authenticates via cookie, mutates via Supabase, then calls `revalida
 | `/login`         | Magic-link login       | Public |
 | `/auth/callback` | Supabase code exchange | Public |
 
-Route group `(dashboard)` shares a layout with `<Nav>` top bar. Auth guard is in `middleware.ts`.
+Route group `(dashboard)` shares a layout with a persistent `<Sidebar>` on the left. Auth guard is in `middleware.ts`.
 
 ### Supabase Clients
 
@@ -150,5 +155,7 @@ Custom primitives in `components/ui/` (Button, Input, Modal) — not full shadcn
 ## Placeholders / Incomplete
 
 - No tests yet
+- Dashboard "Latest Reflection" is a placeholder — AI-generated daily summary planned post-V1
+- Dashboard "Filters" control is visual only
 - No generated Supabase types (`supabase gen types` not wired up — using manual types)
 - Submetric RLS policy only has USING (no WITH CHECK for insert/update/delete)

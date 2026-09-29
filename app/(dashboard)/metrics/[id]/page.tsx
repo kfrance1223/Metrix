@@ -2,7 +2,7 @@
  * app/(dashboard)/metrics/[id]/page.tsx
  *
  * Metric detail page — shows a parent metric with all its submetrics,
- * including charts and entry logging.
+ * including the trend overview card, per-submetric charts, and entry logging.
  */
 
 import { notFound } from "next/navigation";
@@ -11,11 +11,14 @@ import {
   getPeriodStart,
   aggregateEntries,
   computeSubmetricScore,
+  computeMetricScore,
 } from "@/lib/scoring";
+import { computeSubmetricStreak } from "@/lib/insights";
+import DetailedMetricCard from "@/components/metrics/DetailedMetricCard";
 import MetricChart from "@/components/metrics/MetricChart";
 import EntryForm from "@/components/metrics/EntryForm";
 import EntryList from "@/components/metrics/EntryList";
-import type { SubmetricWithScore } from "@/types";
+import type { MetricWithScore, SubmetricWithScore } from "@/types";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -62,9 +65,22 @@ export default async function MetricDetailPage({ params }: PageProps) {
       const currentPeriodValue = aggregateEntries(currentPeriodEntries, submetric.aggregation_type);
       const score = computeSubmetricScore(submetric, currentPeriodValue);
 
-      return { ...submetric, currentPeriodValue, score, entries: submetricEntries };
+      const withScore: SubmetricWithScore = {
+        ...submetric,
+        currentPeriodValue,
+        score,
+        entries: submetricEntries,
+      };
+      withScore.streak = computeSubmetricStreak(withScore, submetricEntries);
+      return withScore;
     }
   );
+
+  const metricWithScore: MetricWithScore = {
+    ...metric,
+    submetrics: submetricsWithData,
+    score: computeMetricScore(submetricsWithData),
+  };
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -76,6 +92,12 @@ export default async function MetricDetailPage({ params }: PageProps) {
           {submetricsWithData.length} tracked item{submetricsWithData.length !== 1 ? "s" : ""}
         </p>
       </div>
+
+      {submetricsWithData.length > 0 && (
+        <div className="mb-10">
+          <DetailedMetricCard metric={metricWithScore} />
+        </div>
+      )}
 
       {submetricsWithData.length > 0 ? (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

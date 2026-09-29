@@ -25,6 +25,9 @@ import {
   computeSubmetricStreak,
   generateDashboardInsights,
   generateProgressionRecommendations,
+  countTodayHits,
+  computeDailyStreak,
+  getRecentActivityFeed,
 } from "@/lib/insights";
 import DashboardClient from "@/components/metrics/DashboardClient";
 import { getPersonalizedRecommendations, getUserProfile } from "@/lib/actions";
@@ -44,15 +47,18 @@ export default async function DashboardPage() {
     return <div>Error loading metrics</div>;
   }
 
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   // Onboarding redirect: if no metrics and not yet onboarded, go to onboarding
-  if (metrics.length === 0) {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (user && !user.user_metadata?.onboarding_completed) {
-      redirect("/onboarding");
-    }
+  if (metrics.length === 0 && user && !user.user_metadata?.onboarding_completed) {
+    redirect("/onboarding");
   }
+
+  // Greeting name: full_name from auth metadata, else the email local-part
+  const displayName: string | null =
+    user?.user_metadata?.full_name || user?.email?.split("@")[0] || null;
 
   // Chart data cutoff: 30 days ago
   const chartCutoff = new Date();
@@ -130,10 +136,20 @@ export default async function DashboardPage() {
     getUserProfile().catch(() => null),
   ]);
 
+  const stats = {
+    overallScore,
+    hitRatio: countTodayHits(metricsWithScores),
+    metricCount: metricsWithScores.length,
+    dailyStreak: computeDailyStreak(metricsWithScores),
+  };
+  const activity = getRecentActivityFeed(metricsWithScores, 8);
+
   return (
     <DashboardClient
+      displayName={displayName}
       initialMetrics={metricsWithScores}
-      overallScore={overallScore}
+      stats={stats}
+      activity={activity}
       insights={insights}
       recommendations={recommendations}
       personalizedRecommendations={personalizedRecs}
