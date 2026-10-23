@@ -9,7 +9,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { upsertUserProfile, generateAndStoreRecommendations } from "@/lib/actions";
-import type { UserProfile, ActivityLevel, FitnessGoal, EmploymentType } from "@/types";
+import type { UserProfile, ActivityLevel, FitnessGoal, EmploymentType, Sex, UnitSystem } from "@/types";
 
 
 interface ProfileFormClientProps {
@@ -34,6 +34,8 @@ export default function ProfileFormClient({
   const [success, setSuccess] = useState(false);
 
   // Form state
+  const [firstName, setFirstName] = useState(initialProfile?.first_name ?? "");
+  const [lastName, setLastName] = useState(initialProfile?.last_name ?? "");
   const [dateOfBirth, setDateOfBirth] = useState(initialProfile?.date_of_birth ?? "");
   const [sex, setSex] = useState(initialProfile?.sex ?? "");
   const [heightCm, setHeightCm] = useState(initialProfile?.height_cm?.toString() ?? "");
@@ -61,8 +63,10 @@ export default function ProfileFormClient({
       
       try {
         await upsertUserProfile({
+          first_name: firstName.trim() || null,
+          last_name: lastName.trim() || null,
           date_of_birth: dateOfBirth || null,
-          sex: (sex as 'male' | 'female' | 'other') || null,
+          sex: (sex as Sex) || null,
           height_cm: heightCm ? parseFloat(heightCm) : null,
           weight_kg: weightKg ? parseFloat(weightKg) : null,
           body_fat_percentage: bodyFat ? parseFloat(bodyFat) : null,
@@ -75,7 +79,7 @@ export default function ProfileFormClient({
           has_employer_match: hasEmployerMatch,
           employer_match_percent: employerMatchPercent ? parseFloat(employerMatchPercent) : null,
           employment_type: employmentType || null,
-          unit_system: unitSystem as 'metric' | 'imperial', 
+          unit_system: unitSystem as UnitSystem, 
           currency,
         });
 
@@ -116,6 +120,39 @@ export default function ProfileFormClient({
       )}
 
       <div className="space-y-6">
+        {/* About You */}
+        <div className="card-gradient rounded-xl p-5">
+          <h2 className="text-sm font-bold text-foreground/90 mb-4 flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-accent" />
+            About You
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className={labelClass}>First Name</label>
+              <input
+                type="text"
+                maxLength={50}
+                autoComplete="given-name"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                placeholder="e.g. Alex"
+                className={inputClass}
+              />
+            </div>
+            <div>
+              <label className={labelClass}>Last Name (optional)</label>
+              <input
+                type="text"
+                maxLength={50}
+                autoComplete="family-name"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                className={inputClass}
+              />
+            </div>
+          </div>
+        </div>
+
         {/* Fitness Section */}
         {showFitness && (
           <div className="card-gradient rounded-xl p-5">
@@ -313,7 +350,7 @@ export default function ProfileFormClient({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className={labelClass}>Unit System</label>
-                <select value={unitSystem} onChange={(e) => setUnitSystem(e.target.value as 'metric' | 'imperial')} className={selectClass}>
+                <select value={unitSystem} onChange={(e) => setUnitSystem(e.target.value as UnitSystem)} className={selectClass}>
                   <option value="metric">Metric (kg, cm)</option>
                   <option value="imperial">Imperial (lb, in)</option>
                 </select>

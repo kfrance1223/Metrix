@@ -56,10 +56,6 @@ export default async function DashboardPage() {
     redirect("/onboarding");
   }
 
-  // Greeting name: full_name from auth metadata, else the email local-part
-  const displayName: string | null =
-    user?.user_metadata?.full_name || user?.email?.split("@")[0] || null;
-
   // Chart data cutoff: 30 days ago
   const chartCutoff = new Date();
   chartCutoff.setDate(chartCutoff.getDate() - 30);
@@ -135,6 +131,13 @@ export default async function DashboardPage() {
     getPersonalizedRecommendations().catch(() => []),
     getUserProfile().catch(() => null),
   ]);
+
+  // Greeting name: profile first name, else first word of auth full_name.
+  // No email fallback — an address's local-part is rarely the person's name.
+  const displayName: string | null =
+    profile?.first_name ||
+    user?.user_metadata?.full_name?.split(" ")[0] ||
+    null;
 
   const stats = {
     overallScore,

@@ -6,6 +6,7 @@
  */
 
 import type { FormulaResult, FitnessProfileInput } from './types';
+import type { Sex } from '@/types';
 import {
   ACTIVITY_MULTIPLIERS,
   CALORIE_ADJUSTMENTS,
@@ -41,7 +42,7 @@ export function computeBMR(
   weightKg: number,
   heightCm: number,
   age: number,
-  sex: 'male' | 'female' | 'other'
+  sex: Sex
 ): number {
   const base = 10 * weightKg + 6.25 * heightCm - 5 * age;
   if (sex === 'male') return base + 5;

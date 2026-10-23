@@ -4,7 +4,7 @@
  * Internal types for the recommendation engine.
  */
 
-import type { RecommendationConfidence } from '@/types';
+import type { RecommendationConfidence, Sex } from '@/types';
 
 /** A single formula result before matching to a submetric. */
 export interface FormulaResult {
@@ -22,7 +22,7 @@ export interface FormulaResult {
 /** Minimal profile fields needed by fitness formulas. */
 export interface FitnessProfileInput {
   date_of_birth: string | null;
-  sex: 'male' | 'female' | 'other' | null;
+  sex: Sex | null;
   height_cm: number | null;
   weight_kg: number | null;
   body_fat_percentage: number | null;

@@ -12,15 +12,11 @@
  */
 
 import { createBrowserClient } from "@supabase/ssr";
+import type { Database } from "@/types/database";
 
-// ---------------------------------------------------------------------------
-// We skip a full Database type map because generating accurate types requires
-// `supabase gen types`. Instead we create an untyped client and rely on our
-// own types/index.ts interfaces for application-level type safety.
-// ---------------------------------------------------------------------------
 
 export function createClient() {
-  return createBrowserClient(
+  return createBrowserClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );

@@ -1,16 +1,22 @@
 /**
  * types/index.ts
  *
- * Single source of truth for shared TypeScript types.
- * These mirror the Supabase database schema. If the schema changes,
- * update these types to match.
+ * Shared TypeScript types. The table interfaces mirror the Supabase schema;
+ * enum unions come straight from the generated types/database.ts, so the value
+ * lists live only in SQL. After a migration, run `npm run gen:types` and then
+ * `npx tsc --noEmit` — the Supabase clients are typed, so any drift between
+ * these interfaces and the database shows up as a compile error.
  */
+
+import type { Database } from './database';
+
+type DbEnum<T extends keyof Database['public']['Enums']> = Database['public']['Enums'][T];
 
 // ============ Type Aliases ============
 
-export type UnitType = 'number' | 'boolean' | 'time' | 'currency' | 'percentage';
-export type TrackingPeriod = 'daily' | 'weekly' | 'monthly';
-export type AggregationType = 'sum' | 'latest';
+export type UnitType = DbEnum<'unit_type'>;
+export type TrackingPeriod = DbEnum<'tracking_period'>;
+export type AggregationType = DbEnum<'aggregation_type'>;
 
 // ============ Database Tables ============
 
@@ -84,19 +90,24 @@ export interface ProgressionRecommendation {
 
 // ============ User Profile & Recommendations ============
 
-export type ActivityLevel = 'sedentary' | 'lightly_active' | 'moderately_active' | 'very_active' | 'extra_active';
-export type FitnessGoal = 'lose_fat' | 'maintain' | 'build_muscle';
-export type EmploymentType = 'full_time' | 'part_time' | 'freelance' | 'self_employed' | 'unemployed';
-export type RecommendationStatus = 'pending' | 'accepted' | 'dismissed' | 'expired';
-export type RecommendationConfidence = 'high' | 'medium' | 'low';
+export type Sex = DbEnum<'sex'>;
+export type ActivityLevel = DbEnum<'activity_level'>;
+export type FitnessGoal = DbEnum<'fitness_goal'>;
+export type EmploymentType = DbEnum<'employment_type'>;
+export type UnitSystem = DbEnum<'unit_system'>;
+export type RecommendationStatus = DbEnum<'recommendation_status'>;
+export type RecommendationConfidence = DbEnum<'recommendation_confidence'>;
 
 /** User profile for personalized target recommendations. */
 export interface UserProfile {
   id: string;
   user_id: string;
+  // Identity
+  first_name: string | null;
+  last_name: string | null;
   // Fitness context
   date_of_birth: string | null;
-  sex: 'male' | 'female' | 'other' | null;
+  sex: Sex | null;
   height_cm: number | null;
   weight_kg: number | null;
   body_fat_percentage: number | null;
@@ -112,7 +123,7 @@ export interface UserProfile {
   employer_match_percent: number | null;
   employment_type: EmploymentType | null;
   // Preferences
-  unit_system: 'metric' | 'imperial';
+  unit_system: UnitSystem;
   currency: string;
   created_at: string;
   updated_at: string;

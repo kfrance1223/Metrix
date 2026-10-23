@@ -26,6 +26,8 @@ import type {
   ActivityLevel,
   FitnessGoal,
   EmploymentType,
+  Sex,
+  UnitSystem,
 } from '@/types';
 import type { MetricTemplate } from '@/lib/onboarding-templates';
 import { generateAllRecommendations } from '@/lib/recommendations';
@@ -343,8 +345,10 @@ export async function getUserProfile(): Promise<UserProfile | null> {
 }
 
 export async function upsertUserProfile(data: {
+  first_name?: string | null;
+  last_name?: string | null;
   date_of_birth?: string | null;
-  sex?: 'male' | 'female' | 'other' | null;
+  sex?: Sex | null;
   height_cm?: number | null;
   weight_kg?: number | null;
   body_fat_percentage?: number | null;
@@ -358,7 +362,7 @@ export async function upsertUserProfile(data: {
   has_employer_match?: boolean;
   employer_match_percent?: number | null;
   employment_type?: EmploymentType | null;
-  unit_system?: 'metric' | 'imperial';
+  unit_system?: UnitSystem;
   currency?: string;
 }): Promise<UserProfile> {
   const supabase = await createClient();

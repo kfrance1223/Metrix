@@ -63,7 +63,8 @@ CREATE POLICY "user owns submetrics" ON public.submetrics
 -- RLS policies for entries: users can only see their own entries
 CREATE POLICY "user owns entries" ON public.submetric_entries
   USING (user_id = auth.uid())
-  WITH CHECK (user_id = auth.uid());
+  WITH CHECK (user_id = auth.uid()); 
+  -- WITH CHECK ensures that users can only insert entries for themselves and not for other users
 
 -- Indexes for performance
 CREATE INDEX idx_metrics_user_id ON public.metrics(user_id);

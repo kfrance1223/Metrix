@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "gen:types": "supabase gen types typescript --local > types/database.ts"
   },
   "dependencies": {
     "@heroui-pro/react": "^1.0.0-beta.10",

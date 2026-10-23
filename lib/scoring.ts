@@ -117,6 +117,26 @@ export function computeMetricScore(
 }
 
 /**
+ * Return the n submetrics that count most toward their parent metric's score,
+ * each with its share of the total weight (0–1). Ties keep their original order.
+ */
+export function getTopSubmetricsByWeight(
+  submetrics: SubmetricWithScore[],
+  n: number
+): { submetric: SubmetricWithScore; weightShare: number }[] {
+  const totalWeight = submetrics.reduce((sum, s) => sum + s.weight, 0);
+  if (totalWeight === 0) return [];
+
+  return [...submetrics]
+    .sort((a, b) => b.weight - a.weight)
+    .slice(0, n)
+    .map((submetric) => ({
+      submetric,
+      weightShare: submetric.weight / totalWeight,
+    }));
+}
+
+/**
  * Compute the overall "life score" as a 0–1 value.
  * Weighted average of all parent metric scores.
  */
